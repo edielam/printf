@@ -1,49 +1,85 @@
 #include "holberton.h"
+#include <stdlib.h>
+
+
 /**
- *_printf - prints an specified format
- *@format: format to print
- *Return: length of the print
+ * check_for_specifiers - checks if there is a valid format specifier
+ * @format: possible format specifier
+ *
+ * Return: pointer to valid function or NULL
+ */
+static int (*check_for_specifiers(const char *format))(va_list)
+{
+	unsigned int i;
+	print_t p[] = {
+		{"c", print_c},
+		{"s", print_s},
+		{"i", print_i},
+		{"d", print_d},
+		{"u", print_u},
+		{"b", print_b},
+		{"o", print_o},
+		{"x", print_x},
+		{"X", print_X},
+		{"p", print_p},
+		{"S", print_S},
+		{"r", print_r},
+		{"R", print_R},
+		{NULL, NULL}
+	};
+
+	for (i = 0; p[i].t != NULL; i++)
+	{
+		if (*(p[i].t) == *format)
+		{
+			break;
+		}
+	}
+	return (p[i].f);
+
+}
+
+/**
+ * _printf - prints anything
+ * @format: list of argument types passed to the function
+ *
+ * Return: number of characters printed
  */
 int _printf(const char *format, ...)
 {
-	function_t identity_f[] = {{'c', _printf_c}, {'s', _printf_s},
-		{'i', print_number}, {'d', print_number}, {'b', _print_b},
-		{'o', _print_o}, {'u', _print_u}, {'x', _print_x},
-		{'X', _print_X}, {'\0', NULL}};
-	va_list flist;
-	unsigned int len_printf = 0, i = 0, k = 0, flag = 0;
-	char j = '\0';
+	unsigned int i = 0, count = 0;
+	va_list valist;
+	int (*f)(va_list);
 
-	if (format == NULL || (format[i] == '%' && format[1] == '\0'))
+	if (format == NULL)
 		return (-1);
-	va_start(flist, format);
+
+	va_start(valist, format);
 	while (format[i])
 	{
-		for (; format[i] != '%' && format[i] != '\0'; i++)
+		for (; format[i] != '%' && format[i]; i++)
 		{
-			j = format[i];
-			len_printf += _putchar(j);
+			_putchar(format[i]);
+			count++;
 		}
-		flag = i + 1;
-		if (format[flag] == '%' && format[i])
-			_putchar('%'), len_printf++, i += 2;
-		else if (format[flag] == '\0')
-			i++;
+		if (!format[i])
+			return (count);
+		f = check_for_specifiers(&format[i + 1]);
+		if (f != NULL)
+		{
+			count += f(valist);
+			i += 2;
+			continue;
+		}
+		if (!format[i + 1])
+			return (-1);
+		_putchar(format[i]);
+		count++;
+		if (format[i + 1] == '%')
+			i += 2;
 		else
-		{
-			for (k = 0; identity_f[k].id && format[i]; k++)
-			{
-				if (identity_f[k].id == format[flag])
-				{
-					len_printf += identity_f[k].f(flist);
-					i += 2;
-					break;
-				}
-			}
-		}
-		if (identity_f[k].id == '\0' && format[i])
-			_putchar(format[i++]), len_printf++;
+			i++;
 	}
-	va_end(flist);
-	return (len_printf);
+	va_end(valist);
+	return (count);
 }
